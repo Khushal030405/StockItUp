@@ -1,76 +1,91 @@
 {% extends "base.html" %}
+
 {% block title %}Billing POS{% endblock %}
+
 {% block content %}
-<section class="grid-2">
-  <div class="panel">
-    <h3>Add Item</h3>
-    <label>Scan / Enter Barcode</label>
-    <div class="inline">
-      <input id="barcodeInput" placeholder="Barcode or QR value">
-      <button type="button" class="btn primary" onclick="addByBarcode()">Add</button>
-      <button type="button" class="btn light" onclick="openBillingScanner()">Scan</button>
-    </div>
-
-    <label>Select Product</label>
-    <select id="productSelect" onchange="addSelected()">
-      <option value="">Choose product</option>
-      {% for p in products %}
-      <option value="{{ p.barcode }}">{{ p.name }} — ₹{{ "%.2f"|format(p.selling_price) }} — Stock {{ p.quantity }}</option>
-      {% endfor %}
-    </select>
-    <button type="button" class="btn light" onclick="addSelected()">Add Selected</button>
-  </div>
-
-  <div class="panel">
-    <h3>Customer</h3>
-    <form method="post" id="billForm" onsubmit="submitBill(event)">
-      <input type="hidden" name="items_json" id="itemsJson">
-      <label>Customer Name <input name="customer_name" placeholder="Walk-in Customer"></label>
-      <label>Phone <input name="customer_phone" placeholder="Optional"></label>
-      <label>Payment Mode
-        <select name="payment_mode">
-          <option>Cash</option><option>UPI</option><option>Card</option>
-        </select>
-      </label>
-      <label>Discount ₹ <input name="discount" type="number" step="0.01" value="0"></label>
-      <button class="btn primary full" type="submit">Generate Bill</button>
-    </form>
-  </div>
-</section>
 
 <div class="panel">
-  <h3>Cart</h3>
-  <table id="cartTable">
-    <tr><th>Product</th><th>Barcode</th><th>Price</th><th>Qty</th><th>Subtotal</th><th></th></tr>
-  </table>
-  <h2 class="total">Total: ₹<span id="cartTotal">0.00</span></h2>
+    <h3>Branch-wise Billing</h3>
+
+    {% if current_role == "master" %}
+    <form method="GET" action="/billing" class="inline">
+        <select name="branch">
+            <option value="">Select Branch</option>
+            {% for b in branches %}
+            <option value="{{ b.name }}" {% if selected_branch == b.name %}selected{% endif %}>
+                {{ b.name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <button class="btn primary" type="submit">Load Branch Products</button>
+    </form>
+    {% else %}
+    <p>Branch: {{ selected_branch }}</p>
+    {% endif %}
 </div>
 
-<div id="billingScannerModal" class="modal-backdrop" style="display:none">
-  <div class="modal-card">
-    <div class="modal-head">
-      <h3>Scan Item</h3>
-      <button type="button" class="mini danger-btn" onclick="closeBillingScanner()">Close</button>
+<div class="grid-2">
+    <div class="panel">
+        <h3>Add Item</h3>
+
+        <input id="barcodeInput" placeholder="Enter / Scan Barcode">
+
+        <button type="button" class="btn primary" onclick="addByBarcode()">Add</button>
+
+        <select id="productSelect" onchange="addSelected()">
+            <option value="">Select Product</option>
+            {% for p in products %}
+            <option value="{{ p.barcode }}">
+                {{ p.name }} - {{ p.branch }} - ₹{{ "%.2f"|format(p.selling_price) }} - Stock {{ p.quantity }}
+            </option>
+            {% endfor %}
+        </select>
     </div>
 
-    <p class="muted">Scan a barcode/QR and it will be added directly to the billing cart.</p>
+    <div class="panel">
+        <h3>Customer</h3>
 
-    <video id="billingScannerVideo" class="scanner-video"></video>
+        <form method="POST" id="billForm" onsubmit="submitBill(event)">
+            <input type="hidden" name="items_json" id="itemsJson">
 
-    <div class="inline scan-buttons">
-      <button type="button" class="btn primary" onclick="startBillingScanner()">Start Camera</button>
-      <button type="button" class="btn light" onclick="stopBillingScanner()">Stop</button>
+            {% if current_role == "master" %}
+            <input type="hidden" name="branch" value="{{ selected_branch }}">
+            {% endif %}
+
+            <input type="text" name="customer_name" placeholder="Customer Name">
+            <input type="text" name="customer_phone" placeholder="Customer Phone">
+
+            <select name="payment_mode">
+                <option>Cash</option>
+                <option>UPI</option>
+                <option>Card</option>
+            </select>
+
+            <input type="number" name="discount" value="0" step="0.01">
+
+            <button class="btn primary" type="submit">Generate Bill</button>
+        </form>
     </div>
-
-    <div class="panel soft">
-      <h4>Scan from Image</h4>
-      <input type="file" accept="image/*" onchange="scanBillingImage(event)">
-    </div>
-
-    <p id="billingScannerStatus" class="muted"></p>
-  </div>
 </div>
 
-<script src="https://unpkg.com/@zxing/library@latest"></script>
+<div class="panel">
+    <h3>Cart</h3>
+
+    <table id="cartTable">
+        <tr>
+            <th>Product</th>
+            <th>Barcode</th>
+            <th>Price</th>
+            <th>Qty</th>
+            <th>Subtotal</th>
+            <th>Action</th>
+        </tr>
+    </table>
+
+    <h2>Total: ₹<span id="cartTotal">0.00</span></h2>
+</div>
+
 <script src="/static/js/billing.js"></script>
+
 {% endblock %}

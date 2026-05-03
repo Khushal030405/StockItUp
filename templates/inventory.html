@@ -1,52 +1,86 @@
 {% extends "base.html" %}
+
 {% block title %}Inventory{% endblock %}
+
 {% block content %}
+
 <div class="toolbar">
-  <form class="search" method="get">
-    <input name="q" value="{{ q }}" placeholder="Search name, barcode, brand">
-    <select name="category">
-      <option value="">All Categories</option>
-      {% for c in categories %}
-      <option value="{{ c.category }}" {% if selected_category==c.category %}selected{% endif %}>{{ c.category }}</option>
-      {% endfor %}
-    </select>
-    <button class="btn light">Search</button>
-  </form>
-  <div>
+    <form method="GET" action="/inventory" class="search">
+
+        {% if current_role == "master" %}
+        <select name="branch">
+            <option value="">All Branches</option>
+            {% for b in branches %}
+            <option value="{{ b.name }}" {% if selected_branch == b.name %}selected{% endif %}>
+                {{ b.name }}
+            </option>
+            {% endfor %}
+        </select>
+        {% endif %}
+
+        <input type="text" name="q" value="{{ q }}" placeholder="Search product/barcode/brand">
+
+        <select name="category">
+            <option value="">All Categories</option>
+            {% for c in categories %}
+            <option value="{{ c.category }}" {% if selected_category == c.category %}selected{% endif %}>
+                {{ c.category }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <button class="btn primary" type="submit">Filter</button>
+    </form>
+
     <a class="btn primary" href="/inventory/add">Add Product</a>
-    {% if current_role in ['master','admin'] %}
-    <a class="btn light" href="/export/products.csv">Export CSV</a>
-    {% endif %}
-  </div>
 </div>
 
 <div class="panel">
-<table>
-<tr>
-  <th>Barcode</th><th>Name</th><th>Category</th><th>Brand</th><th>Cost</th><th>Price</th><th>Qty</th><th>Expiry</th><th>Action</th>
-</tr>
-{% for p in products %}
-<tr class="{% if p.quantity <= p.low_stock_limit %}row-warning{% endif %}">
-  <td>{{ p.barcode }}</td>
-  <td>{{ p.name }}</td>
-  <td>{{ p.category }}</td>
-  <td>{{ p.brand }}</td>
-  <td>{% if current_role in ['master','admin'] %}₹{{ "%.2f"|format(p.cost_price) }}{% else %}-{% endif %}</td>
-  <td>₹{{ "%.2f"|format(p.selling_price) }}</td>
-  <td>{{ p.quantity }}</td>
-  <td>{{ p.expiry_date or "-" }}</td>
-  <td class="actions">
-    <a class="mini" href="/inventory/edit/{{ p.id }}">Edit</a>
-    {% if current_role in ['master','admin'] %}
-    <form method="post" action="/inventory/delete/{{ p.id }}" onsubmit="return confirm('Delete product?')">
-      <button class="mini danger-btn">Delete</button>
-    </form>
-    {% endif %}
-  </td>
-</tr>
-{% else %}
-<tr><td colspan="9">No products found.</td></tr>
-{% endfor %}
-</table>
+    <h3>Branch-wise Inventory</h3>
+
+    <table>
+        <tr>
+            <th>Barcode</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Brand</th>
+            <th>Branch</th>
+            <th>Cost</th>
+            <th>Price</th>
+            <th>Qty</th>
+            <th>Low Limit</th>
+            <th>Expiry</th>
+            <th>Action</th>
+        </tr>
+
+        {% for p in products %}
+        <tr>
+            <td>{{ p.barcode }}</td>
+            <td>{{ p.name }}</td>
+            <td>{{ p.category }}</td>
+            <td>{{ p.brand }}</td>
+            <td>{{ p.branch }}</td>
+            <td>₹{{ "%.2f"|format(p.cost_price) }}</td>
+            <td>₹{{ "%.2f"|format(p.selling_price) }}</td>
+            <td>{{ p.quantity }}</td>
+            <td>{{ p.low_stock_limit }}</td>
+            <td>{{ p.expiry_date or "-" }}</td>
+            <td>
+                <a class="mini" href="/inventory/edit/{{ p.id }}">Edit</a>
+
+                {% if current_role in ["master", "admin"] %}
+                <form method="POST" action="/inventory/delete/{{ p.id }}" style="display:inline;" onsubmit="return confirm('Delete product?')">
+                    <button class="mini danger-btn" type="submit">Delete</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="11">No products found.</td>
+        </tr>
+        {% endfor %}
+    </table>
 </div>
+
 {% endblock %}
