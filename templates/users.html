@@ -1,57 +1,73 @@
 {% extends "base.html" %}
+
 {% block title %}Users{% endblock %}
+
 {% block content %}
 <div class="panel">
-<form method="post" action="/users/add" class="form-grid">
-  <label>Name <input name="name" required></label>
-  <label>Username <input name="username" required></label>
-  <label>Password <input name="password" required></label>
-  <label>Role
-    <select name="role">
-      {% if current_role == 'master' %}
-      <option value="master">Master</option>
-      <option value="admin">Admin</option>
-      {% endif %}
-      <option value="employee">Employee</option>
-    </select>
-  </label>
-  <label>Branch <input name="branch" value="Main Branch"></label>
-  <button class="btn primary">Create User</button>
-</form>
+    <h3>Add User</h3>
+
+    <form method="POST" action="/users/add" class="form-grid">
+        <input type="text" name="name" placeholder="Full Name" required>
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+
+        <select name="role" required>
+            {% if current_role == "master" %}
+                <option value="master">Master Admin</option>
+                <option value="admin">Admin</option>
+            {% endif %}
+            <option value="employee">Employee</option>
+        </select>
+
+        <button class="btn primary" type="submit">Add User</button>
+    </form>
 </div>
 
 <div class="panel">
-<table>
-<tr>
-  <th>Name</th>
-  <th>Username</th>
-  <th>Role</th>
-  <th>Branch</th>
-  <th>Active</th>
-  <th>Action</th>
-</tr>
-{% for u in users %}
-<tr>
-  <td>{{ u.name }}</td>
-  <td>{{ u.username }}</td>
-  <td>{{ u.role }}</td>
-  <td>{{ u.branch }}</td>
-  <td>{{ "Yes" if u.active else "No" }}</td>
-  <td>
-    {% if u.username != 'masteradmin' and u.id != session.get('user_id') %}
-      {% if current_role == 'master' or (current_role == 'admin' and u.role == 'employee') %}
-      <form method="post" action="/users/delete/{{ u.id }}" onsubmit="return confirm('Delete this user?')" style="display:inline">
-        <button class="mini danger-btn">Delete</button>
-      </form>
-      {% else %}
-      -
-      {% endif %}
-    {% else %}
-      -
-    {% endif %}
-  </td>
-</tr>
-{% endfor %}
-</table>
+    <h3>Manage Users</h3>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+
+        {% for u in users %}
+        <tr>
+            <td>{{ u.name }}</td>
+            <td>{{ u.username }}</td>
+            <td>{{ u.role }}</td>
+            <td>
+                {% if u.active %}
+                    Active
+                {% else %}
+                    Inactive
+                {% endif %}
+            </td>
+            <td>
+                {% if u.username != "masteradmin" %}
+                    <form method="POST" action="/users/toggle/{{ u.id }}" style="display:inline;">
+                        <button class="mini" type="submit">
+                            {% if u.active %}
+                                Deactivate
+                            {% else %}
+                                Activate
+                            {% endif %}
+                        </button>
+                    </form>
+
+                    <form method="POST" action="/users/delete/{{ u.id }}" style="display:inline;" onsubmit="return confirm('Delete this user?')">
+                        <button class="mini danger-btn" type="submit">Delete</button>
+                    </form>
+                {% else %}
+                    Protected
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
 </div>
 {% endblock %}
