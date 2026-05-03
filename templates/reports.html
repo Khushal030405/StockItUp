@@ -12,9 +12,9 @@
         <select name="branch">
             <option value="">All Branches</option>
             {% for b in branches %}
-            <option value="{{ b.name }}" {% if selected_branch == b.name %}selected{% endif %}>
-                {{ b.name }}
-            </option>
+                <option value="{{ b.name }}" {% if selected_branch == b.name %}selected{% endif %}>
+                    {{ b.name }}
+                </option>
             {% endfor %}
         </select>
 
@@ -29,7 +29,9 @@
     <table>
         <tr>
             <th>Date</th>
+            {% if current_role == "master" %}
             <th>Branch</th>
+            {% endif %}
             <th>Bills</th>
             <th>Revenue</th>
             {% if current_role == "master" %}
@@ -40,16 +42,21 @@
         {% for s in sales %}
         <tr>
             <td>{{ s.day }}</td>
-            <td>{{ s.branch }}</td>
-            <td>{{ s.bills }}</td>
-            <td>₹{{ "%.2f"|format(s.revenue) }}</td>
+
             {% if current_role == "master" %}
-            <td>₹{{ "%.2f"|format(s.profit) }}</td>
+            <td>{{ s.branch or "No Branch" }}</td>
+            {% endif %}
+
+            <td>{{ s.bills or 0 }}</td>
+            <td>₹{{ "%.2f"|format(s.revenue or 0) }}</td>
+
+            {% if current_role == "master" %}
+            <td>₹{{ "%.2f"|format(s.profit or 0) }}</td>
             {% endif %}
         </tr>
         {% else %}
         <tr>
-            <td colspan="5">No sales report found.</td>
+            <td colspan="5">No sales found.</td>
         </tr>
         {% endfor %}
     </table>
@@ -61,7 +68,9 @@
     <table>
         <tr>
             <th>Product</th>
+            {% if current_role == "master" %}
             <th>Branch</th>
+            {% endif %}
             <th>Quantity</th>
             <th>Low Limit</th>
         </tr>
@@ -69,9 +78,13 @@
         {% for p in low %}
         <tr>
             <td>{{ p.name }}</td>
-            <td>{{ p.branch }}</td>
-            <td>{{ p.quantity }}</td>
-            <td>{{ p.low_stock_limit }}</td>
+
+            {% if current_role == "master" %}
+            <td>{{ p.branch or "No Branch" }}</td>
+            {% endif %}
+
+            <td>{{ p.quantity or 0 }}</td>
+            <td>{{ p.low_stock_limit or 0 }}</td>
         </tr>
         {% else %}
         <tr>
@@ -87,7 +100,9 @@
     <table>
         <tr>
             <th>Product</th>
+            {% if current_role == "master" %}
             <th>Branch</th>
+            {% endif %}
             <th>Expiry Date</th>
             <th>Quantity</th>
         </tr>
@@ -95,9 +110,13 @@
         {% for p in expiry %}
         <tr>
             <td>{{ p.name }}</td>
-            <td>{{ p.branch }}</td>
-            <td>{{ p.expiry_date }}</td>
-            <td>{{ p.quantity }}</td>
+
+            {% if current_role == "master" %}
+            <td>{{ p.branch or "No Branch" }}</td>
+            {% endif %}
+
+            <td>{{ p.expiry_date or "-" }}</td>
+            <td>{{ p.quantity or 0 }}</td>
         </tr>
         {% else %}
         <tr>
