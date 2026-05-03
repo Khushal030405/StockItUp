@@ -17,6 +17,11 @@ database_url = os.environ.get("DATABASE_URL", "sqlite:///stockitup.db")
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
+# Supabase/PostgreSQL on Render needs SSL.
+if database_url.startswith("postgresql://") and "sslmode=" not in database_url:
+    separator = "&" if "?" in database_url else "?"
+    database_url = database_url + separator + "sslmode=require"
+
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -196,6 +201,11 @@ def inject_globals():
 @app.route("/")
 def index():
     return render_template("splash.html")
+
+
+@app.route("/healthz")
+def healthz():
+    return "ok", 200
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -652,7 +662,11 @@ def system_panel():
 
 
 with app.app_context():
-    setup_database()
+    try:
+        setup_database()
+    except Exception as e:
+        print("DATABASE_STARTUP_ERROR:", repr(e), flush=True)
+        raise
 
 
 if __name__ == "__main__":
