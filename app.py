@@ -710,33 +710,108 @@ def toggle_user(user_id):
 @login_required
 def reports():
     branch = selected_branch()
-    where = ""
-    params = []
-    if session.get("role") != "master":
-        where = " WHERE branch=%s"
-        params.append(session.get("branch", "Main Branch"))
-    elif branch:
-        where = " WHERE branch=%s"
-        params.append(branch)
 
-    sales = execute(f"""
-        SELECT DATE(created_at) day, branch, COUNT(*) bills, COALESCE(SUM(total),0) revenue, COALESCE(SUM(profit),0) profit
-        FROM orders
-        {where}
-        GROUP BY DATE(created_at), branch
-        ORDER BY day DESC
-        LIMIT 30
-    """, tuple(params), fetchall=True)
+    try:
+        if session.get("role") != "master":
+            report_branch = session.get("branch", "Main Branch")
+            sales = execute("""
+                SELECT DATE(created_at) AS day,
+                       COALESCE(branch, 'No Branch') AS branch,
+                       COUNT(*) AS bills,
+                       COALESCE(SUM(total), 0) AS revenue,
+                       COALESCE(SUM(profit), 0) AS profit
+                FROM orders
+                WHERE branch=%s
+                GROUP BY DATE(created_at), branch
+                ORDER BY day DESC
+                LIMIT 30
+            """, (report_branch,), fetchall=True) or []
 
-    if where:
-        low = execute(f"SELECT * FROM products {where} AND quantity <= low_stock_limit ORDER BY quantity", tuple(params), fetchall=True)
-        expiry = execute(f"SELECT * FROM products {where} AND expiry_date!='' AND expiry_date <= %s ORDER BY expiry_date", tuple(params + [date.today().isoformat()]), fetchall=True)
-    else:
-        low = execute("SELECT * FROM products WHERE quantity <= low_stock_limit ORDER BY quantity", fetchall=True)
-        expiry = execute("SELECT * FROM products WHERE expiry_date!='' AND expiry_date <= %s ORDER BY expiry_date", (date.today().isoformat(),), fetchall=True)
+            low = execute("""
+                SELECT *
+                FROM products
+                WHERE branch=%s AND quantity <= low_stock_limit
+                ORDER BY quantity
+            """, (report_branch,), fetchall=True) or []
 
-    branches = execute("SELECT * FROM branches WHERE active=1 ORDER BY name", fetchall=True)
-    return render_template("reports.html", sales=sales, low=low, expiry=expiry, branches=branches, selected_branch=branch)
+            expiry = execute("""
+                SELECT *
+                FROM products
+                WHERE branch=%s AND expiry_date IS NOT NULL AND expiry_date != ''
+                ORDER BY expiry_date
+            """, (report_branch,), fetchall=True) or []
+
+        elif branch:
+            sales = execute("""
+                SELECT DATE(created_at) AS day,
+                       COALESCE(branch, 'No Branch') AS branch,
+                       COUNT(*) AS bills,
+                       COALESCE(SUM(total), 0) AS revenue,
+                       COALESCE(SUM(profit), 0) AS profit
+                FROM orders
+                WHERE branch=%s
+                GROUP BY DATE(created_at), branch
+                ORDER BY day DESC
+                LIMIT 30
+            """, (branch,), fetchall=True) or []
+
+            low = execute("""
+                SELECT *
+                FROM products
+                WHERE branch=%s AND quantity <= low_stock_limit
+                ORDER BY quantity
+            """, (branch,), fetchall=True) or []
+
+            expiry = execute("""
+                SELECT *
+                FROM products
+                WHERE branch=%s AND expiry_date IS NOT NULL AND expiry_date != ''
+                ORDER BY expiry_date
+            """, (branch,), fetchall=True) or []
+
+        else:
+            sales = execute("""
+                SELECT DATE(created_at) AS day,
+                       COALESCE(branch, 'No Branch') AS branch,
+                       COUNT(*) AS bills,
+                       COALESCE(SUM(total), 0) AS revenue,
+                       COALESCE(SUM(profit), 0) AS profit
+                FROM orders
+                GROUP BY DATE(created_at), branch
+                ORDER BY day DESC
+                LIMIT 30
+            """, fetchall=True) or []
+
+            low = execute("""
+                SELECT *
+                FROM products
+                WHERE quantity <= low_stock_limit
+                ORDER BY quantity
+            """, fetchall=True) or []
+
+            expiry = execute("""
+                SELECT *
+                FROM products
+                WHERE expiry_date IS NOT NULL AND expiry_date != ''
+                ORDER BY expiry_date
+            """, fetchall=True) or []
+
+        branches = execute("SELECT * FROM branches WHERE active=1 ORDER BY name", fetchall=True) or []
+
+        return render_template(
+            "reports.html",
+            sales=sales,
+            low=low,
+            expiry=expiry,
+            branches=branches,
+            selected_branch=branch
+        )
+
+    except Exception as e:
+        print("REPORTS_PAGE_ERROR:", repr(e), flush=True)
+        flash("Reports failed to load. Check Render logs for REPORTS_PAGE_ERROR.", "danger")
+        return redirect(url_for("dashboard"))
+
 
 
 @app.route("/export/products.csv")
