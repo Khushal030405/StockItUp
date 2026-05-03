@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Invoice {{ order.invoice_no }}{% endblock %}
+{% block content %}
+<div class="invoice panel" id="invoice"><div class="invoice-head"><div><h2>StockItUp</h2><p>Smart Inventory Management</p></div><div><b>{{ order.invoice_no }}</b><br>{{ order.created_at.strftime("%d %b %Y, %I:%M %p") }}<br>Sold by: {{ order.sold_by }}</div></div><hr><p><b>Customer:</b> {{ order.customer_name }}</p><table><tr><th>Item</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>{% for i in items %}<tr><td>{{ i.product_name }}</td><td>{{ i.quantity }}</td><td>₹{{ "%.2f"|format(i.price) }}</td><td>₹{{ "%.2f"|format(i.subtotal) }}</td></tr>{% endfor %}</table><div class="bill-summary"><p>Subtotal: ₹{{ "%.2f"|format(order.subtotal) }}</p><p>Discount: ₹{{ "%.2f"|format(order.discount) }}</p><h2>Total: ₹{{ "%.2f"|format(order.total) }}</h2><p>Payment: {{ order.payment_mode }}</p></div></div><button class="btn primary" onclick="window.print()">Print / Save PDF</button><a class="btn light" target="_blank" href="https://wa.me/?text=Invoice%20{{ order.invoice_no }}%20Total%20₹{{ order.total }}">Send via WhatsApp</a>
+{% endblock %}

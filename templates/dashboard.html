@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Welcome, {{ current_user }}{% endblock %}
+{% block content %}
+<section class="hero"><div><h2>Business Overview</h2><p>Track sales, inventory health, attendance, and daily alerts in one place.</p></div><div class="hero-actions"><a class="btn primary" href="/billing">New Bill</a><a class="btn light" href="/inventory/add">Add Product</a></div></section>
+<section class="cards">
+  <div class="stat"><span>Today's Sales</span><b>₹{{ "%.2f"|format(today_sales) }}</b></div>
+  <div class="stat"><span>Total Products</span><b>{{ product_count }}</b></div>
+  <div class="stat warning"><span>Low Stock</span><b>{{ low_stock }}</b></div>
+  <div class="stat danger"><span>Expiry Soon</span><b>{{ expiry_soon }}</b></div>
+  <div class="stat"><span>Employees Present</span><b>{{ employees_present }}</b></div>
+  {% if current_role in ['master','admin'] %}<div class="stat"><span>Today's Profit</span><b>₹{{ "%.2f"|format(today_profit) }}</b></div>{% endif %}
+</section>
+<section class="grid-2"><div class="panel"><h3>Sales Trend</h3><canvas id="salesChart"></canvas></div><div class="panel"><h3>Top Products</h3><canvas id="topChart"></canvas></div></section>
+<section class="grid-2"><div class="panel"><h3>AI Sales Insight</h3><p class="ai-note">{{ ai_note }}</p></div><div class="panel"><h3>Recent Bills</h3><table><tr><th>Invoice</th><th>Customer</th><th>Total</th></tr>{% for o in recent_orders %}<tr><td><a href="/invoice/{{ o.id }}">{{ o.invoice_no }}</a></td><td>{{ o.customer_name }}</td><td>₹{{ "%.2f"|format(o.total) }}</td></tr>{% else %}<tr><td colspan="3">No sales yet.</td></tr>{% endfor %}</table></div></section>
+<script>window.chartData={dailyLabels:{{ daily_labels|tojson }},dailyValues:{{ daily_values|tojson }},topLabels:{{ top_labels|tojson }},topValues:{{ top_values|tojson }}};</script>
+{% endblock %}

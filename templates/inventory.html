@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Inventory{% endblock %}
+{% block content %}
+<div class="toolbar"><form class="search" method="get"><input name="q" value="{{ q }}" placeholder="Search name, barcode, brand"><select name="category"><option value="">All Categories</option>{% for c in categories %}<option value="{{ c }}" {% if selected_category==c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select><button class="btn light">Search</button></form><div><a class="btn primary" href="/inventory/add">Add Product</a>{% if current_role in ['master','admin'] %}<a class="btn light" href="/export/products.csv">Export CSV</a>{% endif %}</div></div>
+<div class="panel"><table><tr><th>Barcode</th><th>Name</th><th>Category</th><th>Brand</th><th>Cost</th><th>Price</th><th>Qty</th><th>Expiry</th><th>Action</th></tr>
+{% for p in products %}
+<tr class="{% if p.quantity <= p.low_stock_limit %}row-warning{% endif %}"><td>{{ p.barcode }}</td><td>{{ p.name }}</td><td>{{ p.category }}</td><td>{{ p.brand }}</td><td>{% if current_role in ['master','admin'] %}₹{{ "%.2f"|format(p.cost_price) }}{% else %}-{% endif %}</td><td>₹{{ "%.2f"|format(p.selling_price) }}</td><td>{{ p.quantity }}</td><td>{{ p.expiry_date or "-" }}</td><td class="actions"><a class="mini" href="/inventory/edit/{{ p.id }}">Edit</a>{% if current_role in ['master','admin'] %}<form method="post" action="/inventory/delete/{{ p.id }}" onsubmit="return confirm('Delete product?')"><button class="mini danger-btn">Delete</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="9">No products found.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

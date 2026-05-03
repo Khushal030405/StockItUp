@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+instance/
+*.db
+stockitup.db
+.DS_Store
