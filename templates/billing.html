@@ -29,9 +29,11 @@
     <div class="panel">
         <h3>Add Item</h3>
 
-        <input id="barcodeInput" placeholder="Enter / Scan Barcode">
-
-        <button type="button" class="btn primary" onclick="addByBarcode()">Add</button>
+        <div class="inline">
+            <input id="barcodeInput" placeholder="Enter / Scan Barcode">
+            <button type="button" class="btn primary" onclick="addByBarcode()">Add</button>
+            <button type="button" class="btn light" onclick="openBillingScanner()">Scan</button>
+        </div>
 
         <select id="productSelect" onchange="addSelected()">
             <option value="">Select Product</option>
@@ -48,10 +50,7 @@
 
         <form method="POST" id="billForm" onsubmit="submitBill(event)">
             <input type="hidden" name="items_json" id="itemsJson">
-
-            {% if current_role == "master" %}
             <input type="hidden" name="branch" value="{{ selected_branch }}">
-            {% endif %}
 
             <input type="text" name="customer_name" placeholder="Customer Name">
             <input type="text" name="customer_phone" placeholder="Customer Phone">
@@ -86,6 +85,32 @@
     <h2>Total: ₹<span id="cartTotal">0.00</span></h2>
 </div>
 
+<div id="billingScannerModal" class="modal-backdrop" style="display:none">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h3>Scan Item</h3>
+            <button type="button" class="mini danger-btn" onclick="closeBillingScanner()">Close</button>
+        </div>
+
+        <p class="muted">Scan a barcode/QR and it will be added directly to the billing cart.</p>
+
+        <video id="billingScannerVideo" class="scanner-video"></video>
+
+        <div class="inline scan-buttons">
+            <button type="button" class="btn primary" onclick="startBillingScanner()">Start Camera</button>
+            <button type="button" class="btn light" onclick="stopBillingScanner()">Stop</button>
+        </div>
+
+        <div class="panel soft">
+            <h4>Scan from Image</h4>
+            <input type="file" accept="image/*" onchange="scanBillingImage(event)">
+        </div>
+
+        <p id="billingScannerStatus" class="muted"></p>
+    </div>
+</div>
+
+<script src="https://unpkg.com/@zxing/library@latest"></script>
 <script src="/static/js/billing.js"></script>
 
 {% endblock %}
