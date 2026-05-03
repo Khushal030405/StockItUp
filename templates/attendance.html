@@ -1,82 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Attendance{% endblock %}
 {% block content %}
-
 <div class="panel">
-  <h3>Mark Attendance</h3>
-  <form method="post" class="form-grid attendance-form">
-    <label>User
-      <select name="user_id" {% if current_role == 'employee' %}disabled{% endif %}>
-        {% for u in users_list %}
-        <option value="{{ u.id }}">{{ u.name }} — {{ u.username }}{% if u.role %} ({{ u.role }}){% endif %}</option>
-        {% endfor %}
-      </select>
-    </label>
-
-    {% if current_role == 'employee' and users_list %}
-      <input type="hidden" name="user_id" value="{{ users_list[0].id }}">
-    {% endif %}
-
-    <label>Status
-      <select name="status">
-        <option>Present</option>
-        <option>Absent</option>
-        <option>Break</option>
-        <option>Left</option>
-      </select>
-    </label>
-
+  <form method="post" class="inline">
+    <select name="status"><option>Present</option><option>Break</option><option>Left</option></select>
     <button class="btn primary">Mark Attendance</button>
   </form>
 </div>
-
 <div class="panel">
-  <h3>Attendance Logbook</h3>
-  <p class="muted">Shows how many days each user has attendance records and their present/absent count.</p>
-  <table>
-    <tr>
-      <th>User</th>
-      <th>Total Marked Days</th>
-      <th>Present Entries</th>
-      <th>Absent Entries</th>
-      <th>Last Marked</th>
-    </tr>
-    {% for s in summary_rows %}
-    <tr>
-      <td>{{ s.username }}</td>
-      <td>{{ s.total_days }}</td>
-      <td>{{ s.present_count or 0 }}</td>
-      <td>{{ s.absent_count or 0 }}</td>
-      <td>{{ s.last_marked.strftime("%d %b %Y, %I:%M %p") if s.last_marked else "-" }}</td>
-    </tr>
-    {% else %}
-    <tr><td colspan="5">No attendance records yet.</td></tr>
-    {% endfor %}
-  </table>
+<table>
+<tr><th>User</th><th>Status</th><th>Branch</th><th>Time</th></tr>
+{% for r in rows %}
+<tr><td>{{ r.username }}</td><td>{{ r.status }}</td><td>{{ r.branch }}</td><td>{{ r.marked_at }}</td></tr>
+{% endfor %}
+</table>
 </div>
-
-<div class="panel">
-  <h3>Recent Attendance Records</h3>
-  <table>
-    <tr>
-      <th>User</th>
-      <th>Status</th>
-      <th>Branch</th>
-      <th>Time</th>
-    </tr>
-    {% for r in rows %}
-    <tr>
-      <td>{{ r.username }}</td>
-      <td>
-        <span class="status-badge status-{{ r.status|lower }}">{{ r.status }}</span>
-      </td>
-      <td>{{ r.branch }}</td>
-      <td>{{ r.marked_at.strftime("%d %b %Y, %I:%M %p") }}</td>
-    </tr>
-    {% else %}
-    <tr><td colspan="4">No attendance records yet.</td></tr>
-    {% endfor %}
-  </table>
-</div>
-
 {% endblock %}

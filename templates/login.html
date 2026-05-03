@@ -5,15 +5,31 @@
     <div class="logo big">S</div>
     <h1>Welcome to StockItUp</h1>
     <p class="muted">Sign in to manage inventory, billing, sales, and reports.</p>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endif %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
     {% endwith %}
+
     <form method="post" class="login-form">
-      <label>Username</label><input name="username" required placeholder="Enter username" autocomplete="username">
-      <label>Password</label><input name="password" required type="password" placeholder="Enter password" autocomplete="current-password">
+      <label>Username</label>
+      <input name="username" required placeholder="Enter username" autocomplete="username">
+
+      <label>Password</label>
+      <input name="password" required type="password" placeholder="Enter password" autocomplete="current-password">
+
       <button class="btn primary full" type="submit">Login</button>
     </form>
-    <div class="demo-box"><b>Demo Login</b><br>masteradmin / admin123<br>admin / admin123<br>employee / emp123</div>
+
+    <div class="demo-box">
+      <b>Demo Login</b><br>
+      masteradmin / admin123<br>
+      admin / admin123<br>
+      employee / emp123
+    </div>
   </section>
 </div>
 {% endblock %}

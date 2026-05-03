@@ -1,1 +1,14 @@
-{% extends "base.html" %}{% block title %}Customers{% endblock %}{% block content %}<div class="panel"><table><tr><th>Name</th><th>Phone</th><th>Email</th><th>Orders</th><th>Total Spent</th></tr>{% for c in customers %}<tr><td>{{ c.name }}</td><td>{{ c.phone }}</td><td>{{ c.email }}</td><td>{{ c.orders_count }}</td><td>₹{{ "%.2f"|format(c.total_spent) }}</td></tr>{% else %}<tr><td colspan="5">No customer history yet.</td></tr>{% endfor %}</table></div>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Customers{% endblock %}
+{% block content %}
+<div class="panel">
+<table>
+<tr><th>Name</th><th>Phone</th><th>Email</th><th>Orders</th><th>Total Spent</th></tr>
+{% for c in customers %}
+<tr><td>{{ c.name }}</td><td>{{ c.phone }}</td><td>{{ c.email }}</td><td>{{ c.orders_count }}</td><td>₹{{ "%.2f"|format(c.total_spent) }}</td></tr>
+{% else %}
+<tr><td colspan="5">No customer history yet.</td></tr>
+{% endfor %}
+</table>
+</div>
+{% endblock %}

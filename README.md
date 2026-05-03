@@ -1,8 +1,6 @@
-# StockItUp
+# StockItUp PRO - Functional Business Version
 
-Cloud-ready inventory management system built with Flask + PostgreSQL.
-
-## Local Run
+## Run
 
 ```bash
 pip install -r requirements.txt
@@ -15,25 +13,35 @@ Open:
 http://127.0.0.1:5000
 ```
 
-## Default Login
+## Default Accounts
 
-```text
-masteradmin / admin123
-admin / admin123
-employee / emp123
-```
+Master Admin:
+- username: masteradmin
+- password: admin123
 
-## Render
+Admin:
+- username: admin
+- password: admin123
 
-Use Render Web Service + Render PostgreSQL. Set `DATABASE_URL` if not using `render.yaml`.
+Employee:
+- username: employee
+- password: emp123
 
+## Features
 
-## Render Notes
-
-This project includes:
-
-- `runtime.txt` → forces Python 3.11.9
-- PostgreSQL SSL support for Supabase
-- `/healthz` route for Render health checks
-
-Use Supabase Session Pooler DATABASE_URL with port `6543`.
+- Role-based login
+- Inventory add/edit/delete
+- Categories
+- Low stock alerts
+- Expiry alerts
+- Billing POS
+- Multiple items per bill
+- Automatic stock deduction
+- Invoice / bill print page
+- Customer history
+- Attendance
+- Admin-only profit view
+- CSV export
+- Reports dashboard
+- Barcode / QR scanner page
+- Premium purple UI

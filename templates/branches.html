@@ -1,1 +1,18 @@
-{% extends "base.html" %}{% block title %}Branches{% endblock %}{% block content %}<div class="panel"><form method="post" class="inline"><input name="name" required placeholder="Branch Name"><input name="location" placeholder="Location"><button class="btn primary">Add Branch</button></form></div><div class="panel"><table><tr><th>Name</th><th>Location</th><th>Active</th></tr>{% for b in branches %}<tr><td>{{ b.name }}</td><td>{{ b.location }}</td><td>{{ "Yes" if b.active else "No" }}</td></tr>{% endfor %}</table></div>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Branches{% endblock %}
+{% block content %}
+<div class="panel">
+<form method="post" class="inline">
+  <input name="name" required placeholder="Branch Name">
+  <input name="location" placeholder="Location">
+  <button class="btn primary">Add Branch</button>
+</form>
+</div>
+<div class="panel">
+<table><tr><th>Name</th><th>Location</th><th>Active</th></tr>
+{% for b in branches %}
+<tr><td>{{ b.name }}</td><td>{{ b.location }}</td><td>{{ "Yes" if b.active else "No" }}</td></tr>
+{% endfor %}
+</table>
+</div>
+{% endblock %}

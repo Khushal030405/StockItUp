@@ -1,1 +1,33 @@
-{% extends "base.html" %}{% block title %}Reports{% endblock %}{% block content %}<section class="grid-2"><div class="panel"><h3>Sales Report</h3><table><tr><th>Date</th><th>Bills</th><th>Revenue</th>{% if current_role in ['master','admin'] %}<th>Profit</th>{% endif %}</tr>{% for s in sales %}<tr><td>{{ s.day }}</td><td>{{ s.bills }}</td><td>₹{{ "%.2f"|format(s.revenue) }}</td>{% if current_role in ['master','admin'] %}<td>₹{{ "%.2f"|format(s.profit) }}</td>{% endif %}</tr>{% endfor %}</table></div><div class="panel"><h3>Low Stock</h3><table><tr><th>Product</th><th>Qty</th><th>Limit</th></tr>{% for p in low %}<tr><td>{{ p.name }}</td><td>{{ p.quantity }}</td><td>{{ p.low_stock_limit }}</td></tr>{% endfor %}</table></div></section><div class="panel"><h3>Expiry Alerts</h3><table><tr><th>Product</th><th>Expiry</th><th>Qty</th></tr>{% for p in expiry %}<tr><td>{{ p.name }}</td><td>{{ p.expiry_date }}</td><td>{{ p.quantity }}</td></tr>{% else %}<tr><td colspan="3">No upcoming expiry alerts.</td></tr>{% endfor %}</table></div>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<section class="grid-2">
+<div class="panel">
+<h3>Sales Report</h3>
+<table>
+<tr><th>Date</th><th>Bills</th><th>Revenue</th>{% if current_role in ['master','admin'] %}<th>Profit</th>{% endif %}</tr>
+{% for s in sales %}
+<tr><td>{{ s.day }}</td><td>{{ s.bills }}</td><td>₹{{ "%.2f"|format(s.revenue) }}</td>{% if current_role in ['master','admin'] %}<td>₹{{ "%.2f"|format(s.profit) }}</td>{% endif %}</tr>
+{% endfor %}
+</table>
+</div>
+<div class="panel">
+<h3>Low Stock</h3>
+<table><tr><th>Product</th><th>Qty</th><th>Limit</th></tr>
+{% for p in low %}
+<tr><td>{{ p.name }}</td><td>{{ p.quantity }}</td><td>{{ p.low_stock_limit }}</td></tr>
+{% endfor %}
+</table>
+</div>
+</section>
+<div class="panel">
+<h3>Expiry Alerts</h3>
+<table><tr><th>Product</th><th>Expiry</th><th>Qty</th></tr>
+{% for p in expiry %}
+<tr><td>{{ p.name }}</td><td>{{ p.expiry_date }}</td><td>{{ p.quantity }}</td></tr>
+{% else %}
+<tr><td colspan="3">No upcoming expiry alerts.</td></tr>
+{% endfor %}
+</table>
+</div>
+{% endblock %}

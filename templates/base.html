@@ -6,6 +6,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/static/css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% if current_role == 'master' %}
+  <script>
+    document.addEventListener("keydown", function(e){
+      const key = (e.key || "").toLowerCase();
+      if(e.ctrlKey && e.shiftKey && key === "a"){
+        e.preventDefault();
+        window.location.href = "/system";
+      }
+    });
+  </script>
+  {% endif %}
 </head>
 <body>
 {% if current_user %}
@@ -13,7 +24,10 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="logo">S</div>
-      <div><h2>StockItUp</h2><span>Inventory Pro</span></div>
+      <div>
+        <h2>StockItUp</h2>
+        <span>Inventory Pro</span>
+      </div>
     </div>
     <nav>
       <a href="/dashboard">Dashboard</a>
@@ -23,18 +37,35 @@
       <a href="/customers">Customers</a>
       <a href="/attendance">Attendance</a>
       <a href="/reports">Reports</a>
-      {% if current_role in ['master','admin'] %}<a href="/users">Users</a>{% endif %}
-      {% if current_role == 'master' %}<a href="/branches">Branches</a><a href="/system">System</a>{% endif %}
+      {% if current_role in ['master','admin'] %}
+      <a href="/users">Users</a>
+      {% endif %}
+      {% if current_role == 'master' %}
+      <a href="/branches">Branches</a>
+      <a href="/system">System</a>
+      {% endif %}
       <a href="/logout">Logout</a>
     </nav>
   </aside>
   <main class="content">
     <header class="topbar">
-      <div><h1>{% block title %}{% endblock %}</h1><p>{{ today }}</p></div>
-      <div class="profile-pill"><span>{{ current_user }}</span><b>{{ current_role|capitalize }}</b></div>
+      <div>
+        <h1>{% block title %}{% endblock %}</h1>
+        <p>{{ today }}</p>
+      </div>
+      <div class="profile-pill">
+        <span>{{ current_user }}</span>
+        <b>{{ current_role|capitalize }}</b>
+      </div>
     </header>
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}<div class="flash-area">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+      {% if messages %}
+        <div class="flash-area">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
