@@ -5,6 +5,7 @@ from functools import wraps
 import csv
 import io
 import os
+import json
 from werkzeug.security import generate_password_hash, check_password_hash
 
 APP_NAME = "StockItUp"
@@ -15,7 +16,7 @@ app.secret_key = "stockitup_pro_secret_change_me"
 
 
 def db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -164,6 +165,7 @@ def init_db():
         ("8901000000042", "USB Cable Type-C", "Electronics", "StockItUp", 70, 149, 3, 5, ""),
         ("8901000000059", "Cold Coffee", "Beverages", "Cafe", 20, 50, 18, 8, (date.today()+timedelta(days=5)).isoformat()),
     ]
+
     for p in sample_products:
         c.execute("SELECT id FROM products WHERE barcode=?", (p[0],))
         if not c.fetchone():
@@ -260,7 +262,6 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    branch = session.get("branch", "Main Branch")
     product_count = execute("SELECT COUNT(*) c FROM products", fetchone=True)["c"]
     low_stock = execute("SELECT COUNT(*) c FROM products WHERE quantity <= low_stock_limit", fetchone=True)["c"]
     expiry_soon = execute("""
@@ -322,15 +323,19 @@ def inventory():
     category = request.args.get("category", "").strip()
     sql = "SELECT * FROM products WHERE 1=1"
     params = []
+
     if q:
         sql += " AND (name LIKE ? OR barcode LIKE ? OR brand LIKE ?)"
         params += [f"%{q}%", f"%{q}%", f"%{q}%"]
+
     if category:
         sql += " AND category=?"
         params.append(category)
+
     sql += " ORDER BY id DESC"
     products = execute(sql, params, fetchall=True)
     categories = execute("SELECT DISTINCT category FROM products ORDER BY category", fetchall=True)
+
     return render_template("inventory.html", products=products, categories=categories, q=q, selected_category=category)
 
 
@@ -361,6 +366,7 @@ def add_product():
             flash("Barcode already exists.", "danger")
         except Exception as e:
             flash(f"Could not add product: {e}", "danger")
+
     return render_template("product_form.html", product=None)
 
 
@@ -368,6 +374,7 @@ def add_product():
 @login_required
 def edit_product(product_id):
     product = execute("SELECT * FROM products WHERE id=?", (product_id,), fetchone=True)
+
     if not product:
         flash("Product not found.", "danger")
         return redirect(url_for("inventory"))
@@ -414,8 +421,10 @@ def scanner():
 @login_required
 def api_product(barcode):
     p = execute("SELECT * FROM products WHERE barcode=?", (barcode,), fetchone=True)
+
     if not p:
         return jsonify({"ok": False, "message": "Product not found"})
+
     return jsonify({"ok": True, "product": dict(p)})
 
 
@@ -424,6 +433,7 @@ def api_product(barcode):
 def billing():
     if request.method == "POST":
         raw_items = request.form.get("items_json", "[]")
+
         try:
             items = json.loads(raw_items) if raw_items else []
         except Exception:
@@ -449,14 +459,19 @@ def billing():
             for item in items:
                 barcode = str(item["barcode"]).strip()
                 qty = int(item["qty"])
+
                 if qty <= 0:
                     raise Exception("Quantity must be positive.")
+
                 c.execute("SELECT * FROM products WHERE barcode=?", (barcode,))
                 p = c.fetchone()
+
                 if not p:
                     raise Exception(f"Product not found: {barcode}")
+
                 if p["quantity"] < qty:
                     raise Exception(f"Not enough stock for {p['name']}. Available: {p['quantity']}")
+
                 line_total = qty * float(p["selling_price"])
                 line_profit = qty * (float(p["selling_price"]) - float(p["cost_price"]))
                 subtotal += line_total
@@ -467,9 +482,11 @@ def billing():
             invoice_no = "INV" + datetime.now().strftime("%Y%m%d%H%M%S")
 
             customer_id = None
+
             if customer_phone:
                 c.execute("SELECT id FROM customers WHERE phone=?", (customer_phone,))
                 existing = c.fetchone()
+
                 if existing:
                     customer_id = existing["id"]
                 else:
@@ -479,24 +496,49 @@ def billing():
             c.execute("""
                 INSERT INTO orders(invoice_no, customer_id, customer_name, subtotal, discount, total, profit, payment_mode, sold_by, branch)
                 VALUES(?,?,?,?,?,?,?,?,?,?)
-            """, (invoice_no, customer_id, customer_name, subtotal, discount, total, profit, payment_mode, session["username"], session.get("branch","Main Branch")))
+            """, (
+                invoice_no,
+                customer_id,
+                customer_name,
+                subtotal,
+                discount,
+                total,
+                profit,
+                payment_mode,
+                session["username"],
+                session.get("branch","Main Branch")
+            ))
+
             order_id = c.lastrowid
 
             for p, qty, line_total in checked_items:
                 c.execute("""
                     INSERT INTO order_items(order_id,product_id,product_name,barcode,category,quantity,price,cost_price,subtotal)
                     VALUES(?,?,?,?,?,?,?,?,?)
-                """, (order_id, p["id"], p["name"], p["barcode"], p["category"], qty, p["selling_price"], p["cost_price"], line_total))
+                """, (
+                    order_id,
+                    p["id"],
+                    p["name"],
+                    p["barcode"],
+                    p["category"],
+                    qty,
+                    p["selling_price"],
+                    p["cost_price"],
+                    line_total
+                ))
+
                 c.execute("UPDATE products SET quantity = quantity - ? WHERE id=?", (qty, p["id"]))
 
             conn.commit()
             log("SALE", invoice_no)
             flash("Bill generated successfully.", "success")
             return redirect(url_for("invoice", order_id=order_id))
+
         except Exception as e:
             conn.rollback()
             flash(str(e), "danger")
             return redirect(url_for("billing"))
+
         finally:
             conn.close()
 
@@ -509,9 +551,11 @@ def billing():
 def invoice(order_id):
     order = execute("SELECT * FROM orders WHERE id=?", (order_id,), fetchone=True)
     items = execute("SELECT * FROM order_items WHERE order_id=?", (order_id,), fetchall=True)
+
     if not order:
         flash("Invoice not found.", "danger")
         return redirect(url_for("billing"))
+
     return render_template("invoice.html", order=order, items=items)
 
 
@@ -525,6 +569,7 @@ def customers():
         GROUP BY c.id
         ORDER BY c.id DESC
     """, fetchall=True)
+
     return render_template("customers.html", customers=rows)
 
 
@@ -533,10 +578,17 @@ def customers():
 def attendance():
     if request.method == "POST":
         status = request.form.get("status","Present")
+
         execute("""
             INSERT INTO attendance(user_id, username, status, branch)
             VALUES(?,?,?,?)
-        """, (session["user_id"], session["username"], status, session.get("branch","Main Branch")), commit=True)
+        """, (
+            session["user_id"],
+            session["username"],
+            status,
+            session.get("branch","Main Branch")
+        ), commit=True)
+
         log("ATTENDANCE", status)
         flash("Attendance marked.", "success")
         return redirect(url_for("attendance"))
@@ -552,6 +604,7 @@ def users():
         rows = execute("SELECT * FROM users WHERE role='employee' ORDER BY id DESC", fetchall=True)
     else:
         rows = execute("SELECT * FROM users ORDER BY id DESC", fetchall=True)
+
     return render_template("users.html", users=rows)
 
 
@@ -559,9 +612,11 @@ def users():
 @roles_required("master", "admin")
 def add_user():
     role = request.form.get("role")
+
     if session.get("role") == "admin" and role != "employee":
         flash("Admins can only create employee accounts.", "danger")
         return redirect(url_for("users"))
+
     try:
         execute("""
             INSERT INTO users(name, username, password_hash, role, branch)
@@ -573,9 +628,12 @@ def add_user():
             role,
             request.form.get("branch","Main Branch").strip()
         ), commit=True)
+
         flash("User created.", "success")
+
     except sqlite3.IntegrityError:
         flash("Username already exists.", "danger")
+
     return redirect(url_for("users"))
 
 
@@ -583,6 +641,7 @@ def add_user():
 @roles_required("master", "admin")
 def delete_user(user_id):
     target = execute("SELECT * FROM users WHERE id=?", (user_id,), fetchone=True)
+
     if not target:
         flash("User not found.", "danger")
         return redirect(url_for("users"))
@@ -633,10 +692,41 @@ def export_products():
     rows = execute("SELECT * FROM products ORDER BY id", fetchall=True)
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["id","barcode","name","category","brand","cost_price","selling_price","quantity","low_stock_limit","expiry_date","branch"])
+
+    writer.writerow([
+        "id",
+        "barcode",
+        "name",
+        "category",
+        "brand",
+        "cost_price",
+        "selling_price",
+        "quantity",
+        "low_stock_limit",
+        "expiry_date",
+        "branch"
+    ])
+
     for r in rows:
-        writer.writerow([r["id"],r["barcode"],r["name"],r["category"],r["brand"],r["cost_price"],r["selling_price"],r["quantity"],r["low_stock_limit"],r["expiry_date"],r["branch"]])
-    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-Disposition":"attachment; filename=stockitup_products.csv"})
+        writer.writerow([
+            r["id"],
+            r["barcode"],
+            r["name"],
+            r["category"],
+            r["brand"],
+            r["cost_price"],
+            r["selling_price"],
+            r["quantity"],
+            r["low_stock_limit"],
+            r["expiry_date"],
+            r["branch"]
+        ])
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition":"attachment; filename=stockitup_products.csv"}
+    )
 
 
 @app.route("/branches", methods=["GET", "POST"])
@@ -644,11 +734,18 @@ def export_products():
 def branches():
     if request.method == "POST":
         try:
-            execute("INSERT INTO branches(name, location) VALUES(?,?)", (request.form["name"], request.form.get("location","")), commit=True)
+            execute(
+                "INSERT INTO branches(name, location) VALUES(?,?)",
+                (request.form["name"], request.form.get("location","")),
+                commit=True
+            )
             flash("Branch added.", "success")
+
         except sqlite3.IntegrityError:
             flash("Branch already exists.", "danger")
+
         return redirect(url_for("branches"))
+
     rows = execute("SELECT * FROM branches ORDER BY id DESC", fetchall=True)
     return render_template("branches.html", branches=rows)
 
@@ -660,9 +757,17 @@ def system_panel():
     products_count = execute("SELECT COUNT(*) c FROM products", fetchone=True)["c"]
     orders_count = execute("SELECT COUNT(*) c FROM orders", fetchone=True)["c"]
     logs = execute("SELECT * FROM activity_logs ORDER BY id DESC LIMIT 25", fetchall=True)
-    return render_template("system.html", users_count=users_count, products_count=products_count, orders_count=orders_count, logs=logs)
 
+    return render_template(
+        "system.html",
+        users_count=users_count,
+        products_count=products_count,
+        orders_count=orders_count,
+        logs=logs
+    )
+
+
+init_db()
 
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True)
