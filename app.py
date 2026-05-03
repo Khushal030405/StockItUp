@@ -356,14 +356,15 @@ def edit_product(product_id):
     return render_template("product_form.html", product=product)
 
 
-@app.route("/inventory/delete/<int:product_id>", methods=["POST"])
+@app.route("/inventory/delete/<int:product_id>", methods=["GET", "POST"])
 @roles_required("master", "admin")
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
+    product_name = product.name
     db.session.delete(product)
     db.session.commit()
-    log("DELETE_PRODUCT", product.name)
-    flash("Product deleted.", "success")
+    log("DELETE_PRODUCT", product_name)
+    flash("Product deleted successfully.", "success")
     return redirect(url_for("inventory"))
 
 
